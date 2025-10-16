@@ -1,9 +1,13 @@
 import express from 'express';
 import cors from 'cors';
 import Database from './database-simple';
+import dotenv from 'dotenv';
+
+// Charger les variables d'environnement
+dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
@@ -26,13 +30,17 @@ app.get('/api/tasks', async (req, res) => {
 
 app.post('/api/tasks', async (req, res) => {
   try {
-    const { title } = req.body;
+    const { title, status, priority } = req.body;
     
     if (!title || title.trim() === '') {
       return res.status(400).json({ success: false, error: 'Le titre est requis' });
     }
 
-    const newTask = await db.createTask({ title: title.trim() });
+    const newTask = await db.createTask({ 
+      title: title.trim(),
+      status: status || 'To Do',
+      priority: priority || 'Medium'
+    });
     res.status(201).json({ success: true, data: newTask });
   } catch (error) {
     console.error('Erreur lors de la création de la tâche:', error);
@@ -43,9 +51,9 @@ app.post('/api/tasks', async (req, res) => {
 app.put('/api/tasks/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, completed } = req.body;
+    const { title, status, priority, completed } = req.body;
     
-    const updatedTask = await db.updateTask(id, { title, completed });
+    const updatedTask = await db.updateTask(id, { title, status, priority, completed });
     if (!updatedTask) {
       return res.status(404).json({ success: false, error: 'Tâche non trouvée' });
     }
@@ -82,7 +90,9 @@ app.patch('/api/tasks/:id/toggle', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Tâche non trouvée' });
     }
 
-    const updatedTask = await db.updateTask(id, { completed: !task.completed });
+    // Basculer entre 'To Do' et 'Done'
+    const newStatus = task.status === 'Done' ? 'To Do' : 'Done';
+    const updatedTask = await db.updateTask(id, { status: newStatus });
     res.json({ success: true, data: updatedTask });
   } catch (error) {
     console.error('Erreur lors du basculement de la tâche:', error);

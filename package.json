@@ -10,10 +10,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "nodemon src/index.ts",
-    "server": "nodemon src/app.ts",
-    "server:build": "tsc && node dist/simple-server.js",
-    "startt": "node  --import tsx src/index.ts"
+    "server": "nodemon src/app.ts"
   },
   "keywords": [],
   "dependencies": {

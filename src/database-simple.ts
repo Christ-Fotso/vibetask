@@ -1,13 +1,17 @@
 import { Pool } from 'pg';
 import { Task, CreateTaskData, UpdateTaskData } from './types';
+import dotenv from 'dotenv';
 
-// Configuration simple pour PostgreSQL
+// Charger les variables d'environnement
+dotenv.config();
+
+// Configuration de la base de données depuis les variables d'environnement
 const dbConfig = {
-  host: 'localhost',
-  port: 5432,
-  database: 'VibeTask_db', // Votre base de données existante
-  user: 'postgres',
-  password: 'daag' // Votre mot de passe
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '5432'),
+  database: process.env.DB_NAME || 'VibeTask_db',
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || 'daag'
 };
 
 // Singleton pour la connexion à la base de données
@@ -44,16 +48,22 @@ class Database {
 
   public async getAllTasks(): Promise<Task[]> {
     const result = await this.pool.query(`
-      SELECT id::text, title, completed, created_at, updated_at 
+      SELECT id::text, title, status, priority, created_at, updated_at 
       FROM tasks 
-      ORDER BY created_at DESC
+      ORDER BY 
+        CASE priority 
+          WHEN 'High' THEN 1 
+          WHEN 'Medium' THEN 2 
+          WHEN 'Low' THEN 3 
+        END,
+        created_at DESC
     `);
     return result.rows;
   }
 
   public async getTaskById(id: string): Promise<Task | null> {
     const result = await this.pool.query(`
-      SELECT id::text, title, completed, created_at, updated_at 
+      SELECT id::text, title, status, priority, created_at, updated_at 
       FROM tasks 
       WHERE id = $1
     `, [id]);
@@ -62,10 +72,10 @@ class Database {
 
   public async createTask(data: CreateTaskData): Promise<Task> {
     const result = await this.pool.query(`
-      INSERT INTO tasks (title) 
-      VALUES ($1) 
-      RETURNING id::text, title, completed, created_at, updated_at
-    `, [data.title]);
+      INSERT INTO tasks (title, status, priority) 
+      VALUES ($1, $2, $3) 
+      RETURNING id::text, title, status, priority, created_at, updated_at
+    `, [data.title, data.status || 'To Do', data.priority || 'Medium']);
     return result.rows[0];
   }
 
@@ -78,9 +88,18 @@ class Database {
       fields.push(`title = $${paramIndex++}`);
       values.push(data.title);
     }
+    if (data.status !== undefined) {
+      fields.push(`status = $${paramIndex++}`);
+      values.push(data.status);
+    }
+    if (data.priority !== undefined) {
+      fields.push(`priority = $${paramIndex++}`);
+      values.push(data.priority);
+    }
+    // Garder la compatibilité avec completed
     if (data.completed !== undefined) {
-      fields.push(`completed = $${paramIndex++}`);
-      values.push(data.completed);
+      fields.push(`status = $${paramIndex++}`);
+      values.push(data.completed ? 'Done' : 'To Do');
     }
 
     if (fields.length === 0) {
@@ -94,7 +113,7 @@ class Database {
       UPDATE tasks 
       SET ${fields.join(', ')} 
       WHERE id = $${paramIndex} 
-      RETURNING id::text, title, completed, created_at, updated_at
+      RETURNING id::text, title, status, priority, created_at, updated_at
     `, values);
 
     return result.rows[0] || null;
