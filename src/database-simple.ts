@@ -35,7 +35,6 @@ class Database {
     if (this.isInitialized) return;
 
     try {
-      // Tester la connexion à la base de données existante
       await this.pool.query('SELECT 1');
       
       this.isInitialized = true;

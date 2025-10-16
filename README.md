@@ -1,28 +1,37 @@
-# 🎯 VibeTask - To-Do List Minimaliste
+# 🎯 VibeTask - To-Do List Avancée
 
 Une application web moderne de gestion de tâches développée avec **PostgreSQL**, **TypeScript** et **Singleton Pattern** pour démontrer une approche technique claire et méthodique.
 
 ## ✨ Fonctionnalités
 
-### 🎨 Interface Utilisateur
-- **Design moderne** avec Tailwind CSS
+### 🎨 Interface Utilisateur Moderne
+- **Design élégant** avec Tailwind CSS
 - **Interface responsive** (desktop, tablet, mobile)
-- **Formulaire de création** avec validation en temps réel
-- **Cartes de tâches** avec actions contextuelles
-- **Basculement de statut** (complété/non complété)
-- **Suppression avec confirmation**
-- **Notifications** de succès/erreur
-- **Animations fluides**
+- **Formulaire de création** avec sélecteurs de statut et priorité
+- **Boutons de statut interactifs** avec icônes intégrées
+- **Points de priorité colorés** cliquables
+- **Menus déroulants élégants** pour les modifications
+- **Mises à jour instantanées** sans rechargement
+- **Animations fluides** et transitions
 
-### 🔧 API REST
+### 🔧 API REST Complète
 - **CRUD complet** pour les tâches
 - **Codes de statut HTTP corrects** (200, 201, 400, 404, 500)
-- **Validation des données**
+- **Validation des données** côté serveur
 - **Gestion d'erreurs robuste**
+- **Support des statuts avancés** et priorités
 
-### 📊 Statuts des Tâches
-- **false** - Non complétée
-- **true** - Complétée
+### 📊 Statuts des Tâches Avancés
+- **📋 To Do** - À faire (gris)
+- **🔄 In Progress** - En cours (bleu)
+- **⏸️ On Hold** - En attente (jaune)
+- **✅ Done** - Terminée (vert)
+- **❌ Canceled** - Annulée (rouge)
+
+### 🎯 Priorités des Tâches
+- **🟢 Low** - Priorité faible (vert)
+- **🟠 Medium** - Priorité moyenne (orange)
+- **🔴 High** - Priorité élevée (rouge)
 
 ## 🚀 Démarrage Rapide
 
@@ -52,26 +61,45 @@ CREATE DATABASE "VibeTask_db";
 -- Se connecter à la base
 \c "VibeTask_db";
 
--- Créer la table
+-- Créer les types ENUM
+CREATE TYPE task_status_enum AS ENUM (
+  'To Do', 'In Progress', 'On Hold', 'Done', 'Canceled'
+);
+
+CREATE TYPE task_priority_enum AS ENUM (
+  'Low', 'Medium', 'High'
+);
+
+-- Créer la table avec les nouveaux champs
 CREATE TABLE tasks (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
-    completed BOOLEAN DEFAULT FALSE,
+    status task_status_enum DEFAULT 'To Do',
+    priority task_priority_enum DEFAULT 'Medium',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
 ### Configuration de la base de données
-Modifiez le fichier `src/database-simple.ts` avec vos paramètres PostgreSQL :
-```typescript
-const dbConfig = {
-  host: 'localhost',
-  port: 5432,
-  database: 'VibeTask_db',
-  user: 'postgres',
-  password: 'votre_mot_de_passe'
-};
+Créez un fichier `.env` à la racine du projet :
+```env
+# Configuration de la base de données PostgreSQL
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=VibeTask_db
+DB_USER=postgres
+DB_PASSWORD=votre_mot_de_passe
+
+# Configuration du serveur
+PORT=3000
+NODE_ENV=development
+```
+
+### Migration de la base de données
+Si vous avez déjà une base de données existante, exécutez la migration :
+```bash
+node migrate-database.js
 ```
 
 ### Démarrage
@@ -100,35 +128,63 @@ npm run server
 
 ### Créer une Tâche
 1. Saisissez le **titre** de la tâche dans le champ de texte
-2. Cliquez sur **"Ajouter"** ou appuyez sur Entrée
-3. La tâche apparaît immédiatement dans la liste
+2. Sélectionnez le **statut** (To Do, In Progress, On Hold, Done, Canceled)
+3. Choisissez la **priorité** (Low, Medium, High)
+4. Cliquez sur **"Ajouter"** ou appuyez sur Entrée
+5. La tâche apparaît immédiatement dans la liste
 
 ### Gérer les Tâches
-- **Compléter** : Cliquez sur la case à cocher pour marquer comme terminée
+- **Changer le statut** : Cliquez sur le bouton avec l'icône du statut
+- **Modifier la priorité** : Cliquez sur le point coloré de priorité
 - **Supprimer** : Cliquez sur l'icône poubelle (confirmation requise)
-- **Visualiser** : Les tâches terminées sont barrées et atténuées
+- **Visualiser** : Les tâches sont triées par priorité puis par date
 
-### Interface
-- **Design moderne** avec Tailwind CSS
-- **Responsive** : Fonctionne sur tous les appareils
-- **Notifications** : Feedback visuel pour toutes les actions
-- **Animations** : Transitions fluides et professionnelles
+### Interface Moderne
+- **Boutons interactifs** avec icônes intégrées
+- **Menus déroulants élégants** pour les modifications
+- **Points colorés** pour identification rapide
+- **Mises à jour instantanées** sans rechargement
+- **Design responsive** : Fonctionne sur tous les appareils
+- **Animations fluides** et transitions professionnelles
 
 ## 🔗 API Endpoints
 
 ### Tâches
 ```
-GET    /api/tasks              - Récupérer toutes les tâches
+GET    /api/tasks              - Récupérer toutes les tâches (triées par priorité)
 GET    /api/tasks/:id          - Récupérer une tâche par ID
-POST   /api/tasks              - Créer une nouvelle tâche
-PUT    /api/tasks/:id          - Mettre à jour une tâche
+POST   /api/tasks              - Créer une nouvelle tâche (avec statut et priorité)
+PUT    /api/tasks/:id          - Mettre à jour une tâche (titre, statut, priorité)
 DELETE /api/tasks/:id          - Supprimer une tâche
-PATCH  /api/tasks/:id/toggle   - Basculer le statut d'une tâche
+PATCH  /api/tasks/:id/toggle   - Basculer entre To Do et Done
 ```
 
 ### Santé du Serveur
 ```
 GET    /api/health             - Vérifier l'état du serveur
+```
+
+### Exemples de Requêtes
+
+#### Créer une tâche avec statut et priorité
+```bash
+curl -X POST http://localhost:3000/api/tasks \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Réviser le code TypeScript",
+    "status": "In Progress",
+    "priority": "High"
+  }'
+```
+
+#### Mettre à jour le statut d'une tâche
+```bash
+curl -X PUT http://localhost:3000/api/tasks/1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "Done",
+    "priority": "Medium"
+  }'
 ```
 
 ## 📋 Codes de Statut HTTP
@@ -178,19 +234,30 @@ npm start                  # Démarrer en production
 
 ## 🎯 Exemples d'Utilisation
 
-### Créer une Tâche via API
+### Créer une Tâche avec Statut et Priorité
 ```bash
 curl -X POST http://localhost:3000/api/tasks \
   -H "Content-Type: application/json" \
-  -d '{"title":"Ma nouvelle tâche"}'
+  -d '{
+    "title": "Préparer la présentation",
+    "status": "In Progress",
+    "priority": "High"
+  }'
 ```
 
-### Récupérer Toutes les Tâches
+### Récupérer Toutes les Tâches (Triées par Priorité)
 ```bash
 curl http://localhost:3000/api/tasks
 ```
 
-### Basculer le Statut d'une Tâche
+### Mettre à Jour le Statut d'une Tâche
+```bash
+curl -X PUT http://localhost:3000/api/tasks/1 \
+  -H "Content-Type: application/json" \
+  -d '{"status": "Done"}'
+```
+
+### Basculer le Statut d'une Tâche (To Do ↔ Done)
 ```bash
 curl -X PATCH http://localhost:3000/api/tasks/1/toggle
 ```
@@ -233,12 +300,22 @@ curl -X DELETE http://localhost:3000/api/tasks/1
 - **Types stricts** pour toutes les interfaces
 - **Validation à la compilation** des erreurs
 - **IntelliSense** complet pour le développement
+- **Support des ENUMs** PostgreSQL
 
-### Interface Moderne
+### Interface Moderne et Interactive
+- **Boutons de statut** avec icônes intégrées
+- **Points de priorité** colorés et cliquables
+- **Menus déroulants** élégants et intuitifs
+- **Mises à jour instantanées** sans rechargement
 - **Design responsive** avec Tailwind CSS
 - **Animations fluides** et transitions
-- **Feedback visuel** pour toutes les actions
-- **Gestion d'erreurs** élégante
+- **Tri intelligent** par priorité puis par date
+
+### Base de Données Avancée
+- **Types ENUM** PostgreSQL pour les statuts et priorités
+- **Index optimisés** pour les performances
+- **Migration automatique** des données existantes
+- **Configuration externalisée** via variables d'environnement
 
 ## 📄 Licence
 
@@ -269,11 +346,14 @@ Si vous rencontrez des problèmes ou avez des questions :
 ## 🎯 **Pour l'Entretien**
 
 Ce projet démontre :
-- ✅ **PostgreSQL** avec connexion réelle
-- ✅ **TypeScript** strict et professionnel  
+- ✅ **PostgreSQL** avec types ENUM et connexion réelle
+- ✅ **TypeScript** strict et professionnel avec types avancés
 - ✅ **Singleton Pattern** pour la base de données
-- ✅ **API REST** complète et bien structurée
-- ✅ **Interface élégante** et responsive
+- ✅ **API REST** complète avec statuts et priorités
+- ✅ **Interface moderne** avec boutons interactifs et menus élégants
+- ✅ **Mises à jour instantanées** sans rechargement
 - ✅ **Code maintenable** et bien documenté
+- ✅ **Migration de base de données** automatisée
+- ✅ **Configuration externalisée** avec variables d'environnement
 
-**VibeTask** - To-Do List minimaliste et élégante ! 🚀
+**VibeTask** - To-Do List avancée et élégante ! 🚀
